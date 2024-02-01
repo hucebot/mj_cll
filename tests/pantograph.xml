@@ -1,0 +1,58 @@
+<mujoco model="pantograph">
+
+  <compiler eulerseq="xyz" angle="radian" meshdir="assets" texturedir="assets"/>
+
+  <option timestep="0.001"/>
+
+  <default class="pantograph">
+      <equality solimp="0.005 1"/>
+  </default>
+
+  <contact>
+  	<exclude body1="Link0" body2="Link1" />
+  	<exclude body1="Link0" body2="Link2" />
+  	<exclude body1="Link2" body2="Link3" />
+  	<exclude body1="Link1" body2="Link3" />
+  </contact>
+  
+  
+  <worldbody>
+
+    <body name="Link0" pos="0 0 0.5" euler="0 0 0">
+
+        <inertial pos="0 0 0" mass="1"   />    
+        <geom type="capsule" size = "0.01" fromto = "-0.25 0 0 0.25 0 0" rgba="1 0.1 0.1 1"/>
+        <body name="Link1" pos ="-0.25 0 0">
+            <geom type="capsule" size = "0.01" fromto = "0 0 0 0 0 -0.2" rgba="1 0.1 0.1 1"/>
+            <inertial pos="0.03 0 -0.02" mass="1"   diaginertia = "1e-3 1e-3 1e-3"/>    
+            <joint name="joint1" pos = "0 0 0" axis="0 1 0"/>
+        </body>
+
+        <body name="Link2" pos ="0.25 0 0">
+            <geom  type="capsule" size = "0.01" fromto = "0 0 0 0 0 -0.2" rgba="1 0.1 0.1 1"/>
+            <inertial pos="0 0 -0.02" mass="1"   diaginertia = "1e-3 1e-3 1e-3"/>    
+            <joint name="joint2" pos = "0 0 0" axis="0 1 0"/>
+
+            <body name="Link3" pos ="0 0 -0.2" euler="0 0 0">
+                <geom type="capsule" size = "0.01" fromto = "0 0 0 -0.5 0 0" rgba="1 0.1 0.1 1"/>
+                <inertial pos="-0.25 0 0" mass="1"  diaginertia = "1e-3 1e-3 1e-3"/>    
+                <joint name="joint3" pos = "0 0 0" axis="0 1 0"/>
+            </body>
+
+        </body>
+
+    </body>
+
+  </worldbody>
+
+  <equality>
+      <connect class="pantograph" name="Loop" body1="Link1" body2="Link3" anchor="0 0 -0.2"/>
+  </equality>
+  
+  <actuator>
+  	<!--motor name="joint2_torque" joint="joint2" ctrllimited="true" ctrlrange="-10. 10."/-->
+  	<position name="joint2_position" joint="joint2" kp="100"/>
+  </actuator>
+
+</mujoco>
+
