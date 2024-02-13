@@ -162,8 +162,10 @@ namespace mj_cll
                 _A.block(0,0,_closed_linkage.getP().rows(), _q.size()) = _closed_linkage.getP() * _closed_linkage.getU().transpose();
                 _A.block(_closed_linkage.getP().rows(),0, _closed_linkage.getConstraintJacobian().rows(), _q.size()) = _closed_linkage.getConstraintJacobian();
 
+
                 _e.segment(0, _closed_linkage.getP().rows()) = qjdot_desired;
-                _e.segment(_closed_linkage.getP().rows(), _closed_linkage.getConstraintJacobian().rows()) = -error();
+                _e.segment(_closed_linkage.getP().rows(), _closed_linkage.getConstraintJacobian().rows()) = -error;
+
 
                 computeJointLimitsConstraint(qmin, qmax, _q, dt);
 
@@ -294,7 +296,6 @@ namespace mj_cll
             {
                 _H = A.transpose()*A;
                 _g = -A.transpose()*b;
-
 
                 for(unsigned int i = 0; i < _H.rows(); ++i)
                     _H(i, i) += eps;
