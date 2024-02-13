@@ -50,6 +50,27 @@ public:
         _ik->computeFKVelocity(qdota, error, qdotu);
     }
 
+    mj_cll::ClosedLinkageMj::VectorX computeIFKVelocity(py::object model, py::object data, const mj_cll::ClosedLinkageMj::VectorX& qjdot_desired,
+                         const mj_cll::ClosedLinkageMj::VectorX& error,
+                         const mj_cll::ClosedLinkageMj::VectorX& qmin, const mj_cll::ClosedLinkageMj::VectorX& qmax,
+                         const double dt, const double reg)
+    {
+        std::uintptr_t m_raw = model.attr("_address").cast<std::uintptr_t>();
+        std::uintptr_t d_raw = data.attr("_address").cast<std::uintptr_t>();
+
+
+        mjModel* m_cpp = reinterpret_cast<mjModel *>(m_raw);
+        mjData* d_cpp  = reinterpret_cast<mjData *>(d_raw);
+
+        Eigen::VectorXd qdot(m_cpp->nq);
+        qdot.setZero();
+
+        if(!_ik->computeIFKVelocity(*m_cpp, *d_cpp, qjdot_desired, error, qmin, qmax, dt, qdot, reg))
+            throw std::runtime_error("Failed solveQP()!");
+
+        return qdot;
+    }
+
     int getIterations() { return _ik->getIterations(); }
 
     const mj_cll::KinematicsMj::IKRESULT& getIkResult() const { return _ik->getIkResult(); }
@@ -66,6 +87,8 @@ PYBIND11_MODULE(pyIK, m) {
              py::arg("efc_eps") = 1e-4, py::arg("max_iter") = 1000)
         .def("ikLoopQP", &KinematicsMjWrapper::ikLoopQP, py::arg("model"), py::arg("data"), py::arg("q_ref"), py::arg("qmin"), py::arg("qmax"),
              py::arg("lambda_"), py::arg("alpha"), py::arg("eps") = 1e-6, py::arg("efc_eps") = 1e-4, py::arg("reg") = 1e-9,  py::arg("max_iter") = 1000)
+        .def("computeIFKVelocity", &KinematicsMjWrapper::computeIFKVelocity, py::arg("model"), py::arg("data"), py::arg("qjdot_desired"), py::arg("error"), py::arg("qmin"), py::arg("qmax"),
+             py::arg("dt"), py::arg("reg") = 1e-9)
         .def("getIkResult", &KinematicsMjWrapper::getIkResult)
         .def("getIterations", &KinematicsMjWrapper::getIterations);
 
