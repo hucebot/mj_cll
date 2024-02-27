@@ -1,15 +1,28 @@
-import IK
+#!/usr/bin/env python3
+
+import sys
+from mj_cll_jax import IK
 import subprocess
 import mujoco as mj
 from mujoco import mjx
 import jax
 import jax.numpy as jnp
 import numpy as np
-import sys
 np.set_printoptions(threshold=sys.maxsize)
 from pymj_cll import ClosedLinkageMjWrapper as mj_cll
 from pyIK import IKMj
 import unittest
+import time
+
+def jax_has_gpu():
+    try:
+        _ = jax.device_put(jax.numpy.ones(1), device=jax.devices('gpu')[0])
+        return True
+    except:
+        return False
+
+print(jax_has_gpu())
+
 
 def torad(x):
     return x * 3.1415/180.
@@ -115,14 +128,26 @@ mjx_d = mjx.make_data(mjx_m)
 mjx_d = mjx.forward(mjx_m, mjx_d)
 
 dt = 0.01
-sol = IK.computeIFKVelocity(mjx_d,
+computeIFKVelocity = jax.jit(IK.computeIFKVelocity, static_argnames=["ne", "nv"], device=jax.devices('gpu')[0])
+sol = computeIFKVelocity(mjx_d,
                             PU, qdes,
                             error=jnp.zeros(d.ne),
                             qmin=qmin, qmax=qmax,
-                            dt=dt, reg=1e-6, ne=d.ne, nv=m.nq)
+                            dt=dt, reg=1e-9, ne=d.ne, nv=m.nq)
+tic = time.time()
+sol = computeIFKVelocity(mjx_d,
+                            PU, qdes,
+                            error=jnp.zeros(d.ne),
+                            qmin=qmin, qmax=qmax,
+                            dt=dt, reg=1e-9, ne=d.ne, nv=m.nq)
+toc = time.time()
+print("jax time: ", toc - tic)
 
 ik = IKMj(cl)
-qdot = ik.computeIFKVelocity(m, d, q_des_, error=np.zeros(d.ne), qmin=qmin_, qmax=qmax_, dt=dt, reg=1e-6)
+tic = time.time()
+qdot = ik.computeIFKVelocity(m, d, q_des_, error=np.zeros(d.ne), qmin=qmin_, qmax=qmax_, dt=dt, reg=1e-9)
+toc = time.time()
+print("normal time: ", toc - tic)
 
 print("mj_cll_jax sol: ", sol)
 print("mj_cll sol: ", qdot)
